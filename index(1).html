@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Strefa Fotografa i Klienta</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #fdfbfb, #ebedee);
+      color: #333;
+    }
+    header {
+      background: #ff6b6b;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 1.5em;
+    }
+    .container {
+      display: flex;
+    }
+    .sidebar {
+      width: 220px;
+      background: #333;
+      color: white;
+      min-height: 100vh;
+      padding: 20px 0;
+    }
+    .sidebar h3 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .sidebar button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 5px 0;
+      border: none;
+      background: #444;
+      color: white;
+      text-align: left;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    .sidebar button:hover {
+      background: #ff6b6b;
+    }
+    .content {
+      flex: 1;
+      padding: 20px;
+    }
+    .panel {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+    .hidden {
+      display: none;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button.main {
+      background: #ff6b6b;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+    }
+    button.main:hover {
+      background: #ff3b3b;
+    }
+  </style>
+</head>
+<body>
+
+<header>📸 Strefa Fotografa i Klienta</header>
+
+<div id="loginPanel" class="panel" style="max-width:400px; margin:20px auto;">
+  <h2>🔑 Logowanie</h2>
+  <input type="text" id="login" placeholder="Login">
+  <input type="password" id="haslo" placeholder="Hasło">
+  <button class="main" onclick="zaloguj()">Zaloguj</button>
+</div>
+
+<div id="fotografApp" class="hidden">
+  <div class="container">
+    <div class="sidebar">
+      <h3>📸 Panel</h3>
+      <button onclick="showSection('sesje')">➕ Sesje</button>
+      <button onclick="showSection('klienci')">👥 Klienci</button>
+      <button onclick="showSection('zdjecia')">📷 Zdjęcia</button>
+      <button onclick="showSection('wiadomosci')">💬 Wiadomości</button>
+      <button onclick="wyloguj()">🚪 Wyloguj</button>
+    </div>
+    <div class="content">
+      <div id="sesje" class="panel hidden">
+        <h2>➕ Sesje</h2>
+        <input type="text" id="sessionName" placeholder="Nazwa sesji">
+        <input type="text" id="sessionCode" placeholder="Kod rabatowy">
+        <input type="text" id="sessionClient" placeholder="Login klienta">
+        <button class="main" onclick="addSession()">Dodaj sesję</button>
+        <div id="sessionList"></div>
+      </div>
+
+      <div id="klienci" class="panel hidden">
+        <h2>👥 Klienci</h2>
+        <input type="text" id="newClientLogin" placeholder="Login klienta">
+        <input type="password" id="newClientPass" placeholder="Hasło klienta">
+        <button class="main" onclick="addClient()">Dodaj klienta</button>
+        <div id="clientList"></div>
+      </div>
+
+      <div id="zdjecia" class="panel hidden">
+        <h2>📷 Zdjęcia</h2>
+        <input type="file" multiple>
+        <p>Przeciągnij zdjęcia tutaj lub wybierz pliki.</p>
+      </div>
+
+      <div id="wiadomosci" class="panel hidden">
+        <h2>💬 Wiadomości do klientów</h2>
+        <textarea id="messageText" rows="5" placeholder="Treść wiadomości..."></textarea>
+        <button class="main" onclick="wyslijWiadomosc()">Wyślij</button>
+        <div id="messagesList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="klientPanel" class="panel hidden" style="max-width:600px; margin:20px auto;">
+  <h2>🎞️ Panel Klienta</h2>
+  <div id="sesjeKlienta"></div>
+  <button class="main" onclick="wyloguj()">🚪 Wyloguj</button>
+</div>
+
+<script>
+  const clients = [{ login: "fotograf", haslo: "1234", type: "fotograf" }];
+  const sessions = [];
+  const messages = [];
+  let loggedClient = null; // Przechowuje aktualnie zalogowanego klienta
+
+  function zaloguj() {
+    const login = document.getElementById("login").value;
+    const haslo = document.getElementById("haslo").value;
+
+    const user = clients.find(u => u.login === login && u.haslo === haslo);
+    if (user) {
+      document.getElementById("loginPanel").classList.add("hidden");
+      if (user.type === "fotograf") {
+        document.getElementById("fotografApp").classList.remove("hidden");
+      } else {
+        loggedClient = user;
+        document.getElementById("klientPanel").classList.remove("hidden");
+        pokazSesjeKlienta();
+      }
+    } else {
+      alert("Błędny login lub hasło!");
+    }
+  }
+
+  function wyloguj() {
+    location.reload();
+  }
+
+  function showSection(section) {
+    document.querySelectorAll(".content .panel").forEach(p => p.classList.add("hidden"));
+    document.getElementById(section).classList.remove("hidden");
+  }
+
+  function addClient() {
+    const login = document.getElementById("newClientLogin").value;
+    const pass = document.getElementById("newClientPass").value;
+    if (clients.find(c => c.login === login)) {
+      alert("Taki klient już istnieje!");
+      return;
+    }
+    clients.push({ login: login, haslo: pass, type: "klient" });
+    const list = document.getElementById("clientList");
+    const div = document.createElement("div");
+    div.innerText = `👤 ${login}`;
+    list.appendChild(div);
+    alert("Dodano klienta!");
+  }
+
+  function addSession() {
+    const name = document.getElementById("sessionName").value;
+    const code = document.getElementById("sessionCode").value;
+    const clientLogin = document.getElementById("sessionClient").value;
+    
+    const client = clients.find(c => c.login === clientLogin && c.type === "klient");
+    if (!client) {
+      alert("Nie znaleziono takiego klienta!");
+      return;
+    }
+
+    sessions.push({ name: name, code: code, client: clientLogin });
+
+    const list = document.getElementById("sessionList");
+    const div = document.createElement("div");
+    div.innerText = `📷 ${name} (Kod: ${code}, Klient: ${clientLogin})`;
+    list.appendChild(div);
+    alert("Dodano sesję!");
+  }
+
+  function pokazSesjeKlienta() {
+    const sesjeDiv = document.getElementById("sesjeKlienta");
+    sesjeDiv.innerHTML = "";
+    const sesjeKlienta = sessions.filter(s => s.client === loggedClient.login);
+    if (sesjeKlienta.length === 0) {
+      sesjeDiv.innerHTML = `<div class="panel">🎉 Nie masz jeszcze przypisanych sesji.</div>`;
+    } else {
+      sesjeKlienta.forEach(s => {
+        const div = document.createElement("div");
+        div.className = "panel";
+        div.innerHTML = `🎉 Sesja: <b>${s.name}</b> (Kod: ${s.code})`;
+        sesjeDiv.appendChild(div);
+      });
+    }
+  }
+
+  function wyslijWiadomosc() {
+    const text = document.getElementById("messageText").value;
+    if (text.trim() === "") return;
+    messages.push(text);
+    const list = document.getElementById("messagesList");
+    const div = document.createElement("div");
+    div.innerText = `✉️ ${text}`;
+    list.appendChild(div);
+    document.getElementById("messageText").value = "";
+    alert("Wiadomość wysłana!");
+  }
+</script>
+
+</body>
+</html>
